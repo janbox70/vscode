@@ -5,6 +5,13 @@
 // @ts-check
 "use strict";
 
+/* ----------------------------------------------------------------------------------------------
+ * modified by janbox@sina.com on 2025-05-24
+ * display mouse-hover pixel color for image on statusbar
+ * to patch, copy this file to $(vscode_installDir}\resources\app\extensions\media-preview\media\imagePreview.js
+ * usually, vscode_installDir is C:\Users\xxxx\AppData\Local\Programs\Microsoft VS Code
+ *--------------------------------------------------------------------------------------------*/
+
 (function () {
 	/**
 	 * @param {number} value
@@ -77,6 +84,8 @@
 	// Elements
 	const container = document.body;
 	const image = document.createElement('img');
+	const canvas = document.createElement('canvas');
+	canvas.style.display = 'none';
 
 	function updateScale(newScale) {
 		if (!image || !hasLoadedImage || !image.parentElement) {
@@ -294,6 +303,36 @@
 		document.body.classList.add('ready');
 		document.body.append(image);
 
+		// draw to convas
+		canvas.width = image.naturalWidth;
+		canvas.height = image.naturalHeight;
+		const ctx = canvas.getContext('2d');
+		ctx.drawImage(image, 0, 0);
+		
+		image.addEventListener("mousemove", (/** @type {MouseEvent} */ e) => {
+			if (!image || !hasLoadedImage) {
+				return;
+			}
+			if (e.button !== 0) {
+				return;
+			}
+			// convert pos to image
+			let scale_t = scale
+			if (scale === 'fit' || scale === 'Whole Image') {
+				scale_t = image.clientWidth / image.naturalWidth;
+			} 
+
+			const imageRect = image.getBoundingClientRect();
+			let posx = Math.floor(e.layerX/scale_t - imageRect.left);
+			let posy = Math.floor(e.layerY/scale_t - imageRect.top);
+			let clr = ctx.getImageData(posx, posy, 1, 1)
+			// for now, reuse size-panel
+			vscode.postMessage({
+				type: 'size',
+				value: `RGB(${clr.data[0]},${clr.data[1]},${clr.data[2]}) / Pos(${posx},${posy}) / ${image.naturalWidth}x${image.naturalHeight}`,
+			});
+		});
+	
 		updateScale(scale);
 
 		if (initialState.scale !== 'fit') {
