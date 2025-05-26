@@ -303,7 +303,7 @@
 		document.body.classList.add('ready');
 		document.body.append(image);
 
-		// draw to convas
+		// 绘制到 convas 上
 		canvas.width = image.naturalWidth;
 		canvas.height = image.naturalHeight;
 		const ctx = canvas.getContext('2d');
@@ -316,17 +316,15 @@
 			if (e.button !== 0) {
 				return;
 			}
-			// convert pos to image
+
 			let scale_t = scale
 			if (scale === 'fit' || scale === 'Whole Image') {
 				scale_t = image.clientWidth / image.naturalWidth;
 			} 
 
-			const imageRect = image.getBoundingClientRect();
-			let posx = Math.floor(e.layerX/scale_t - imageRect.left);
-			let posy = Math.floor(e.layerY/scale_t - imageRect.top);
+			let posx = Math.floor(e.offsetX/scale_t);
+			let posy = Math.floor(e.offsetY/scale_t);
 			let clr = ctx.getImageData(posx, posy, 1, 1)
-			// for now, reuse size-panel
 			vscode.postMessage({
 				type: 'size',
 				value: `RGB(${clr.data[0]},${clr.data[1]},${clr.data[2]}) / Pos(${posx},${posy}) / ${image.naturalWidth}x${image.naturalHeight}`,
